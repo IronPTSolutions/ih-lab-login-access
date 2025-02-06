@@ -4,19 +4,37 @@ const createError = require("http-errors");
 
 module.exports.create = (req, res, next) => {
   const { email, password } = req.body;
+  console.log('Email:', email);
+  console.log('Password:', password);
 
-  // 1. find user by email
-  // 2. check password
-  // 3. create session
-  // 4. send session id in a cookie
+  // 1. Find user by email
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return next(createError(400, 'User not found'));
+      }
 
-  res.header("Set-Cookie", "session_id=12345");
+      // 2. Check password
+      return user.checkPassword(password).then((isMatch) => {
+        if (!isMatch) {
+          return next(createError(400, 'User incorrect password'));
+        }
 
-  res.json({ message: "TO DO!" });
+        // 3. Create session
+        return Session.create({ userId: user._id }).then((session) => {
+          // 4. Send session ID in a cookie
+          res.cookie("session_id", session._id, { httpOnly: true });
+
+          res.status(201).json(session);
+        });
+      });
+    })
+    .catch((error) => next(error));
 };
+
 
 module.exports.destroy = (req, res, next) => {
   // access current request session. remove and send 204 status
-
-  res.status(204).send();
+  Session.findByIdAndDelete(req.session._id)
+  .then(()=> res.status(204).send());
 };

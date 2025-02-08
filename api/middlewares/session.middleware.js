@@ -2,22 +2,26 @@ const Session = require("../models/session.model");
 const createError = require("http-errors");
 
 module.exports.checkSession = (req, res, next) => {
-  // find session id from cookie. imagine cookie is "session=1234; other=5678"
-  const sessionId = "TO DO!";
+  const sessionId = req.cookies.session_id || req.headers["session-id"];
+  console.log("Session ID from cookie or header:", sessionId);
 
   if (!sessionId) {
-    next(createError(401, "missing session from cookie header"));
+    return next(createError(401, "Missing session from cookie header"));
   }
 
-  // 1. find session by ID
-  // 2. populate user field
-  // 3. update session last access
-  // 5. save session
-  // 6. leave user on req object
-  // 7. leave session on req object
-  // 8. continue to next middleware or controller
-  // 9. handle errors with 401 code
+  Session.findById(sessionId)
+    .populate("user")
+    .then((session) => {
+      if (!session) {
+        console.log("Session not found in database");
+        next(createError(401, "Session expired or not found"));
+      }
 
-  // TODO: remove this line when done
-  next();
+      console.log("User authenticated:", session.user);
+      req.session = session;
+      req.user = session.user; 
+
+      next();
+    })
+    .catch(next);
 };

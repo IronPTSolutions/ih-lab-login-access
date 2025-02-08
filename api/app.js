@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const logger = require("morgan");
 const cors = require("./middlewares/cors.middleware");
+const cookieParser = require("cookie-parser");
 
 /* DB init */
 require("./config/db.config");
@@ -10,6 +11,7 @@ const app = express();
 
 /* Middlewares */
 app.use(express.json());
+app.use(cookieParser()); 
 app.use(logger("dev"));
 app.use(cors);
 
